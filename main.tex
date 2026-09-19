@@ -11,6 +11,7 @@
 \usepackage{balance}
 \usepackage{float}
 \usepackage{xurl}
+\usepackage{longtable}
 
 \definecolor{CourseBlue}{HTML}{315EFB}
 \definecolor{CourseTeal}{HTML}{14877D}
@@ -52,7 +53,7 @@
 }
 
 \newcommand{\ColabLink}{
-\url{https://colab.research.google.com/drive/1X3pShVdZfKDuHvvDRv116KbVT8oVtQv0?usp=sharing}
+\url{https://colab.research.google.com/drive/1EgajrDNORTv1QM_G9HKN74O0B_UlOC7E?usp=sharing}
 }
 
 \newcommand{\DemoLink}{
@@ -96,60 +97,44 @@ Making Heterogeneous LLM and Agent Services Comparable
 
 \renewcommand{\shortauthors}{Lee}
 
-
 \begin{document}
 
-% ============================================================
-% FIGURE 1
-% ============================================================
-
 \begin{teaserfigure}
+    \centering
 
-\captionsetup{skip=8pt}
-\centering
-
-% Use the PNG if it exists.
-% If it is missing, the document will still compile.
-\IfFileExists{figures/ps1_teaser.png}{
-    \includegraphics[
-        width=\textwidth
-    ]{figures/ps1_teaser.png}
-}{
-    \fbox{
-        \parbox[c][3.0cm][c]{0.94\textwidth}{
-            \centering
-            Figure 1 placeholder:
-            SUU computational and behavioral framework
+    \IfFileExists{figures/ps1_teaser.png}{
+        \includegraphics[
+            width=\textwidth
+        ]{figures/ps1_teaser.png}
+    }{
+        \fbox{
+            \parbox[c][2cm][c]{0.9\textwidth}{
+                \centering
+                \textbf{IMAGE FILE NOT FOUND: figures/ps1\_teaser.png}
+            }
         }
     }
-}
 
-\caption{
-Proposed Standardized Usage Unit (SUU) framework.
-Provider-specific prices and usage constraints are converted into
-workload-specific service capacities for reasoning, coding, and agentic tasks.
-These capacities are adjusted using normalized benchmark performance to produce
-Reasoning SUU, Coding SUU, and Agentic SUU; Overall SUU is their equal-weight
-average. The three-stage behavioral design compares decisions made with
-(1) original provider information,
-(2) expanded capability and limit information,
-and (3) SUU and SUU-per-dollar information.
-}
+    \caption{
+    Proposed Standardized Usage Unit (SUU) framework.
+    The full framework converts provider-specific usage constraints into
+    workload-specific service capacities for reasoning, coding, and agentic tasks,
+    then adjusts these capacities using normalized benchmark performance.
+    The current PS1 implementation estimates benchmark quality and an
+    output-token capacity upper bound; final workload-specific capacity remains
+    future measurement.
+    }
+    \label{fig:teaser}
 
-\Description{
-A diagram showing four AI subscription providers feeding provider-specific
-prices and usage limits into a normalization pipeline. The pipeline produces
-reasoning, coding, and agentic standardized usage units and their equal-weight
-overall score. A three-stage experiment compares consumer choices before and
-after standardized information is introduced.
-}
-
-\label{fig:teaser}
-
+    \Description{
+    A diagram showing four AI subscription providers, standardized usage
+    measurement, workload-specific comparison, and a three-stage behavioral
+    experiment.
+    }
 \end{teaserfigure}
 
-
 \maketitle
+
 \raggedbottom
 \coursemeta
 
@@ -189,10 +174,10 @@ standardization itself create anchoring and false comparability?
 
 \vspace{0.5em}
 
-Figure~\ref{fig:teaser} connects the three questions:
+Figure 1 connects the three questions:
 computation constructs comparability,
 economics interprets value,
-and behavioral science tests whether the standardized information improves
+and behavioral science tests whether standardized information improves
 decision making.
 
 
@@ -242,7 +227,22 @@ services.
 Following quality-adjusted price comparison~\cite{ehrlich2026},
 my provisional hypothesis is that standardized usage information reduces
 comparison costs and helps consumers select plans that better match their
-workloads.
+workloads. However, a common unit is useful only if it preserves economically
+important differences across tasks rather than hiding them.
+
+I therefore developed an economic validation design that compares two AI
+services across two workloads while varying the cost of model errors.
+For each condition, the benchmark compares the plan preferred under
+task-specific quality and error sensitivity with the plan that appears preferable
+under a standardized aggregate measure. The central validation question is
+whether SUU preserves the choice implied by economically relevant workload
+differences.
+
+This test also motivates retaining separate Reasoning, Coding, and Agentic
+views rather than relying only on Overall SUU. If an aggregate measure repeatedly
+changes the preferred service when workload requirements or error costs change,
+the Overall measure should not be interpreted as a sufficient representation of
+consumer value.
 
 The experimental information structure changes sequentially:
 Stage 1 shows original provider descriptions,
@@ -251,11 +251,10 @@ and Stage 3 adds SUU.
 
 For the current one-consumer benchmark, the decision rule is
 utility-maximizing plan choice under the disclosed information.
-For the later strategic disclosure extension, Bayesian equilibrium is
+For a later strategic disclosure extension, Bayesian equilibrium is
 the solution concept under incomplete information~\cite{harsanyi1968}.
-
-A later strategic extension could allow providers to choose how much usage
-information to disclose and study how consumer beliefs respond to that disclosure.
+Providers could then choose how much usage information to disclose while
+consumers form beliefs about service quality and usable capacity.
 
 
 % ============================================================
@@ -264,156 +263,77 @@ information to disclose and study how consumer beliefs respond to that disclosur
 
 \section{Answer to Q2: method and evaluation}
 
-For provider $p$ and workload
-$j\in\{R,C,A\}$---reasoning, coding, and agentic---let
-$C_{p,j}$ denote the number of standardized reference tasks supported by the
-plan's binding usage constraints.
-
-Let $K_j$ denote the set of benchmark tasks associated with workload
-$j\in\{R,C,A\}$, and let $S_{p,k}$ be provider $p$'s score on benchmark $k$.
-
-\vspace{0.4em}
-
-Each benchmark is normalized against the best-performing compared provider,
-and the normalized scores are averaged within each workload:
+For provider $p$ and workload $j\in\{R,C,A\}$---reasoning, coding, and
+agentic---let $K_j$ be the relevant benchmark set and $S_{p,k}$ the score on
+benchmark $k$. I define workload quality as
 
 \[
 B_{p,j}
 =
 \frac{1}{|K_j|}
 \sum_{k\in K_j}
-\frac{S_{p,k}}
-{\max_q S_{q,k}}.
+\frac{S_{p,k}}{\max_q S_{q,k}},
+\qquad
+B_p=\frac{B_{p,R}+B_{p,C}+B_{p,A}}{3}.
 \]
 
-For readability, all reported benchmark-quality scores below are
-shown on a 0--100 scale, i.e., as $100B_{p,j}$; the SUU definition
-uses the corresponding 0--1 value $B_{p,j}$.
+The full SUU framework targets a workload-specific capacity $C_{p,j}$ and
+$\mathrm{SUU}_{p,j}=C_{p,j}B_{p,j}$, with separate Reasoning, Coding, and
+Agentic views plus an equal-weight Overall view. Price efficiency is
+$\mathrm{SUU}_{p,j}/P_p$.
 
-The workload-specific Standardized Usage Unit is
+The current PS1 implementation estimates only what the available data support.
+Artificial Analysis v4.3 supplies common benchmark evidence and weighted-average
+output tokens per Intelligence Index task~\cite{aa2026}. Let $Q_p$ be an
+estimated monthly usable-token allowance, $O_p$ the reported output tokens per
+standardized task, and $T_p$ the unobserved total tokens consumed by that task.
+Because $T_p\ge O_p$,
 
 \[
-\boxed{
-\mathrm{SUU}_{p,j}
-=
-C_{p,j}B_{p,j}
-}.
+C_p=\frac{Q_p}{T_p}
+\le
+\frac{Q_p}{O_p}
+\equiv C_p^{\mathrm{out}}.
 \]
 
-Overall SUU is the equal-weight mean:
+I therefore report $C_p^{\mathrm{out}}$ as an \emph{output-capacity upper
+bound}, not as an actual monthly task count. The corresponding PS1 proxy is
 
 \[
-\boxed{
-\mathrm{SUU}_{p,\mathrm{Overall}}
-=
-\frac{
-\mathrm{SUU}_{p,R}
-+
-\mathrm{SUU}_{p,C}
-+
-\mathrm{SUU}_{p,A}
-}{3}
-}.
+\mathrm{SUU}^{\mathrm{out}}_p=C_p^{\mathrm{out}}B_p,
+\qquad
+\mathrm{SUU}^{\mathrm{out}}_p/\$=
+\frac{\mathrm{SUU}^{\mathrm{out}}_p}{P_p}.
 \]
 
-\vspace{0.4em}
+The benchmark mapping follows HELM's broader principle of standardized,
+multi-scenario evaluation~\cite{bommasani2023}. Reasoning aggregates HLE,
+GDP.pdf, CritPt, Omniscience, and LCR; Coding uses Terminal-Bench and SciCode;
+and Agentic uses AA-Briefcase, GDPval-AA, and AutomationBench. The resulting
+Reasoning/Coding/Agentic scores are 99.76/99.12/98.72 for ChatGPT Plus,
+61.36/59.23/77.51 for Claude Pro, 75.96/66.95/84.76 for Google AI Pro, and
+70.69/66.92/98.91 for SuperGrok. Their Overall quality scores are 99.20,
+66.03, 75.89, and 78.84, respectively.
 
-The user therefore receives four views:
-\textbf{Overall},
-\textbf{Reasoning},
-\textbf{Coding},
-and \textbf{Agentic}.
-Price efficiency is additionally reported as
+For capacity, the Colab uses external monthly allowance estimates of 159M
+ChatGPT Plus tokens, 3.97B Claude Pro tokens, and 509M SuperGrok tokens from
+Real API Pricing~\cite{realapi2026}. Google AI Pro is entered as a
+low-confidence 2.22B-token monthly estimate obtained by combining two public
+usage reports~\cite{googlequota2026,googleweekly2026}. Artificial Analysis
+reports 27k, 118k, 71k, and 36k output tokens per task for the four selected
+models. These inputs imply output-capacity upper bounds of 5,888.89,
+33,644.07, 31,267.61, and 14,138.89 tasks per month. After quality adjustment,
+$\mathrm{SUU}^{\mathrm{out}}$ is 5,841.79, 22,216.46, 23,729.62, and 11,147.41;
+the corresponding upper-bound SUU-per-dollar values are 292.09, 1,110.82,
+1,187.07, and 371.58.
 
-\[
-\mathrm{SUU/\$}_{p,j}
-=
-\frac{\mathrm{SUU}_{p,j}}{P_p}.
-\]
-
-\vspace{0.5em}
-
-The computational design follows the broader principle of standardized,
-multi-scenario model evaluation emphasized by HELM~\cite{bommasani2023}.
-Rather than treating one aggregate benchmark as universally representative,
-I preserve workload-specific components before forming an Overall score. One common benchmark source,
-Artificial Analysis Intelligence Index v4.3,
-provides model-quality evidence~\cite{aa2026}.
-The Reasoning component aggregates HLE, GDP.pdf, CritPt,
-Omniscience, and LCR; Coding aggregates Terminal-Bench and SciCode;
-and Agentic aggregates AA-Briefcase, GDPval-AA, and AutomationBench.
-Within each component, benchmark scores are normalized before averaging.
-
-\vspace{0.5em}
-
-A fresh run of the benchmark-normalization pipeline produced Overall benchmark
-scores of 95.55 for ChatGPT Plus, 95.06 for Claude Pro, 72.48 for Google AI Pro,
-and 75.28 for SuperGrok. The Reasoning, Coding, Agentic workload-specific scores were
-97.70/94.44/94.52 for ChatGPT Plus,
-95.52/94.07/95.59 for Claude Pro,
-74.08/62.19/81.18 for Google AI Pro, and
-68.95/62.24/94.66 for SuperGrok.
-
-\vspace{0.4em}
-
-The workload breakdown shows why one aggregate score is insufficient:
-SuperGrok, for example, has a relatively high Agentic score (94.66) despite
-substantially lower Reasoning (68.95) and Coding (62.24) scores.
-These are actual computational outputs from the frozen benchmark snapshot,
-not final subscription-level SUUs; the latter additionally require measured
-usage capacity.
-
-\vspace{0.5em}
-
-The computational \textbf{baseline} uses the normalized
-Artificial Analysis composite score,
-
-\[
-B^{\mathrm{base}}_p
-=
-\frac{S^{\mathrm{AA}}_p}
-{\max_q S^{\mathrm{AA}}_q}.
-\]
-
-\vspace{0.4em}
-
-The proposed \textbf{modification} replaces this single aggregate score
-with workload-specific benchmark components for Reasoning, Coding, and
-Agentic use. The three workload scores are then averaged to obtain an
-Overall benchmark-quality score.
-
-\vspace{0.4em}
-
-Numerically, the normalized composite baseline scores were
-100.00, 100.00, 77.36, and 83.02 for ChatGPT Plus, Claude Pro,
-Google AI Pro, and SuperGrok, respectively. The workload-specific
-modification produced Overall scores of 95.55, 95.06, 72.48, and
-75.28. The largest baseline-to-modification difference was
-$-7.74$ points for SuperGrok, illustrating that a single composite
-score can conceal workload-specific variation.
-
-\vspace{0.4em}
-
-The Colab implementation perturbs each raw benchmark input one at a time by
-$\pm10\%$ and $\pm20\%$ and recomputes the resulting workload and Overall
-scores. This identifies which benchmark inputs most strongly affect the
-comparison.
-
-\vspace{0.4em}
-
-Among the tested one-at-a-time perturbations, the largest absolute change
-in an Overall benchmark score was 4.16\%. Reducing Google AI Pro's
-SciCode input by 20\% lowered its Overall score from 72.48 to 69.47.
-Thus, all tested single-input perturbations changed the Overall score by
-less than 5\% in magnitude.
-
-\vspace{0.4em}
-
-In the current PS1 implementation, I empirically compute the benchmark-quality
-component $B_{p,j}$. Provider-specific usage capacity $C_{p,j}$ requires a
-separate standardized quota-depletion experiment and is therefore left for
-future measurement. The current numerical outputs are consequently
-benchmark-normalized quality scores rather than final subscription-level SUUs.
+These quantities are deliberately labeled upper-bound proxies: total task
+consumption also includes input and cached-input tokens, which are not publicly
+reported in the same weighted task unit. A $\pm20\%$ sensitivity check on each
+quota estimate moves $C_p^{\mathrm{out}}$, $\mathrm{SUU}^{\mathrm{out}}$, and
+SUU-per-dollar by the same $\pm20\%$, making the dependence on uncertain quota
+estimates explicit. The full workload-specific $C_{p,j}$ remains a next-step
+measurement problem rather than an imputed result.
 
 
 % ============================================================
@@ -454,14 +374,29 @@ Systematic movement toward the largest Overall SUU regardless of workload
 would instead support the anchoring explanation.
 
 The current prototype does not establish behavioral or welfare effects;
-those require a controlled user study.
+those require controlled user evaluation. In response to peer feedback, I
+redesigned the behavioral validation specifically around the possibility that
+Overall SUU may itself become a numeric anchor.
 
-A feasible next test would randomize participants between an Overall-only
-standardized display and the workload-specific display. If the workload-specific
-version fails to improve workload-choice consistency, or instead increases
-selection of the numerically largest plan regardless of stated needs, I would
-reject the claim that disaggregation improves decision quality and redesign the
-interface to de-emphasize the Overall score.
+The revised design randomizes participants between two standardized displays:
+an \textbf{Overall-only} interface and a \textbf{four-view} interface showing
+Overall, Reasoning, Coding, and Agentic SUU. Participants receive a stated
+workload profile and choose among the same AI subscription plans under the two
+information treatments.
+
+The primary outcome is workload-choice consistency: whether the selected plan
+matches the participant's assigned workload needs. Secondary outcomes include
+usage-comprehension accuracy, choice confidence, and the frequency with which
+participants select the plan displaying the numerically largest Overall SUU
+regardless of workload fit.
+
+This design distinguishes useful simplification from numeric anchoring.
+If the four-view interface improves workload-choice consistency while preserving
+or improving comprehension, that pattern would be consistent with the claim that
+disaggregation helps users interpret the standardized measure. If participants
+instead converge toward the largest Overall value regardless of workload, the
+result would support the anchoring explanation and motivate de-emphasizing or
+removing the Overall score.
 
 
 % ============================================================
@@ -477,14 +412,24 @@ foundational contributions to artificial intelligence and human cognition
 \cite{simonNobel,simonTuring}.
 
 The enduring human question is how people make useful decisions when their
-information and computational capacity are limited.
+information and computational capacity are limited. This also provides a
+continuing intellectual thread from my Week 1 proposal to the present project.
 
-\vspace{0.5em}
+My earlier media-imitation question asked how producers interpret audience
+success as a shared but uncertain signal of demand: whether observed success
+reveals a persistent preference or encourages imitation of a temporary trend.
+The current project applies the same broader question to AI markets. Here,
+consumers interpret prices, benchmarks, usage limits, and standardized measures
+as signals about the value of competing services.
 
-AI subscriptions create a new version of this problem:
-service quantity depends on workload,
-model quality,
-and dynamic provider-specific usage rules rather than a single physical unit.
+The project therefore represents a reasoned pivot rather than an unrelated
+change of topic. The common question is how shared information signals guide
+decisions under uncertainty, and when simplifying those signals improves
+coordination versus distorting behavior.
+
+AI subscriptions create a particularly useful setting for this question because
+service quantity depends on workload, model quality, error sensitivity, and
+dynamic provider-specific usage rules rather than a single physical unit.
 
 The proposed contribution integrates
 computational normalization,
@@ -583,23 +528,19 @@ To reproduce the analysis, open the linked Colab notebook and select
 
 \vspace{0.4em}
 
-The repository contains the benchmark inputs,
-normalization notebook,
-dependencies,
-sensitivity-analysis code,
-and generated outputs.
-The Colab computes workload-specific normalized benchmark scores,
-their equal-weight Overall score,
-price-adjusted benchmark value,
-and one-at-a-time $\pm10\%/\pm20\%$ sensitivity tests.
-Final capacity-adjusted SUU remains planned until provider-specific usage
-capacities are measured.
+The repository contains the benchmark inputs, external quota estimates,
+normalization notebook, dependencies, and generated outputs.
+The Colab computes workload-specific benchmark-quality scores, their equal-weight
+Overall score, the output-capacity upper bound $C_p^{\mathrm{out}}$, the
+quality-adjusted $\mathrm{SUU}_p^{\mathrm{out}}$ proxy, SUU-per-dollar, and a
+$\pm20\%$ sensitivity check on the estimated monthly quota. It does not impute
+total tokens per task or claim that the upper bound is an observed task count.
 
 The computational artifacts correspond to GitHub commit
-\texttt{GitHubCOMMIT}.
+\texttt{UPDATE\_AFTER\_PUSH}.
 
 The interactive artifact corresponds to Hugging Face Space commit
-\texttt{cbb2247}.
+\texttt{91ed3a7}.
 
 
 % ============================================================
@@ -642,18 +583,30 @@ learning; this educational effect has not yet been established.
 I thank Prof. Luyao Zhang, Program Chair,
 and Prof. Ken Rogerson, Program Discussant,
 of the \emph{2056 Nobel and Turing Laureate Program Launch Workshop},
-held at Duke Kunshan University on September 7, 2026. I also thank Zimu Zhou and YiChen Shen,
-my teammates in Trust and Deception of Session E,
-and the rest of the COMSCI/ECON 206 Autumn 2026 Session 1 class for their questions and discussion.
+held at Duke Kunshan University on September 7, 2026.
+I also thank Zimu Zhou and YiChen Shen,
+my teammates in the Trust and Deception session,
+and the COMSCI/ECON 206 Autumn 2026 Session 1 class
+for their questions and discussion.
+I am additionally grateful to Yiqiao Liu and Feiyu Li
+for their peer-review feedback on the proposal.
 
 \vspace{0.5em}
 
-One question raised during the September 7 workshop was how trustworthiness and reliability could be measured. I used this feedback to clarify that SUU should not simply collapse provider-reported usage into one number. Instead, the measure should rely on
-common benchmark evidence, workload-specific components, and sensitivity analysis so that the resulting comparison is transparent.
+Feedback from the workshop and peer review helped refine several parts of the
+project. A question raised during the September 7 workshop about how
+trustworthiness and reliability could be measured led me to clarify that SUU
+should not simply collapse provider-reported usage into a single number.
+Instead, the framework now emphasizes common benchmark evidence,
+workload-specific components, and sensitivity analysis.
+Peer feedback further motivated an empirical capacity upper bound, explicit
+reporting of quota uncertainty, and a behavioral comparison between Overall and
+workload-specific SUU displays.
 
 \vspace{0.5em}
 
-I am responsible for the proposal and remaining errors.
+I remain responsible for the proposal, all research decisions,
+and any remaining errors.
 
 
 \subsection*{Individual contribution}
@@ -671,7 +624,7 @@ and manually tested the Hugging Face prototype. AI-assisted drafting and interfa
 % REFERENCES
 % ============================================================
 
-\begin{thebibliography}{9}
+\begin{thebibliography}{12}
 
 \bibitem{ehrlich2026}
 Gabriel Ehrlich,
@@ -721,6 +674,25 @@ Artificial Analysis Intelligence Index v4.3.
 https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v4-3
 }.
 
+\bibitem{realapi2026}
+FeiZhuLulu.
+2026.
+Real API Pricing: Subscription Fee Divided by Usable Tokens.
+GitHub repository, data snapshot accessed September 19, 2026.
+\url{https://github.com/FeiZhuLulu/real-api-pricing}.
+
+\bibitem{googlequota2026}
+google-antigravity/antigravity-cli.
+2026.
+Issue 960: Excessive quota consumption on Pro tier with Gemini 3.8 Flash.
+\url{https://github.com/google-antigravity/antigravity-cli/issues/960}.
+
+\bibitem{googleweekly2026}
+HemSoft/codexbar-ios.
+2026.
+Issue 314: Track Antigravity usage separately from Gemini Apps.
+\url{https://github.com/HemSoft/codexbar-ios/issues/314}.
+
 \bibitem{simonNobel}
 The Nobel Prize.
 1978.
@@ -759,10 +731,10 @@ https://sdgs.un.org/goals/goal4
 
 \subsection{SUU definition}
 
-For provider $p$ and workload
-$j\in\{R,C,A\}$,
-define $C_{p,j}$ as the number of standardized reference tasks supported by the
-binding provider quota.
+For the full target framework, provider $p$ and workload
+$j\in\{R,C,A\}$ use $C_{p,j}$ to denote the number of standardized reference
+tasks supported by the binding provider quota. The current PS1 does not claim
+to have measured this workload-specific quantity.
 
 Let $K_j$ denote the set of benchmark tasks associated with workload
 $j\in\{R,C,A\}$, and let $S_{p,k}$ denote provider $p$'s score on benchmark
@@ -878,68 +850,67 @@ Within each benchmark, provider scores are normalized relative to the
 best-performing model among the four compared plans. The normalized benchmark
 scores are then averaged within each workload category to obtain
 $B_{p,R}$, $B_{p,C}$, and $B_{p,A}$.
-Only a model available under the selected consumer plan is eligible to
-represent that plan.
+The selected plan--model mapping follows the external allowance evidence used
+for the capacity analysis; configuration-level correspondence remains a
+measurement limitation when provider product rules change.
 
 \vspace{0.4em}
 
 \begin{table}[H]
 \centering
-\caption{Benchmark-normalized workload scores from the frozen 2026-09-13 snapshot.}
+\caption{Benchmark-normalized workload scores used in the final PS1 computation.}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Plan} & \textbf{Overall} & \textbf{Reason.} &
 \textbf{Coding} & \textbf{Agentic} \\
 \midrule
-ChatGPT Plus   & 95.55 & 97.70 & 94.44 & 94.52 \\
-Claude Pro     & 95.06 & 95.52 & 94.07 & 95.59 \\
-Google AI Pro  & 72.48 & 74.08 & 62.19 & 81.18 \\
-SuperGrok      & 75.28 & 68.95 & 62.24 & 94.66 \\
+ChatGPT Plus   & 99.20 & 99.76 & 99.12 & 98.72 \\
+Claude Pro     & 66.03 & 61.36 & 59.23 & 77.51 \\
+Google AI Pro  & 75.89 & 75.96 & 66.95 & 84.76 \\
+SuperGrok      & 78.84 & 70.69 & 66.92 & 98.91 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \vspace{0.4em}
 
-These scores represent the benchmark-quality component of SUU.
-They do not yet incorporate provider-specific usage capacity.
+These scores represent the benchmark-quality component of the framework.
+The current Colab combines the Overall quality score with a separately estimated
+plan-level capacity upper bound; workload-specific capacity remains unmeasured.
 
 
 \subsection{Colab computation}
 
-The Colab notebook uses the frozen Artificial Analysis v4.3 benchmark snapshot
-for the four compared plans and derives workload-specific scores for
-Reasoning, Coding, and Agentic use.
+The final Colab uses the selected Artificial Analysis v4.3 benchmark values for
+GPT-6 Astra (max), Claude Sonnet 5 (max), Gemini 3.8 Flash (high), and Grok 4.6
+(high). It computes $B_{p,R}$, $B_{p,C}$, $B_{p,A}$, and their equal-weight
+Overall quality score $B_p$.
 
-\vspace{0.4em}
+For the capacity calculation, let $Q_p$ be the estimated monthly usable-token
+allowance, $O_p$ Artificial Analysis output tokens per weighted Intelligence
+Index task, and $T_p$ the unobserved total tokens per task. Since $T_p\ge O_p$,
 
-For each benchmark, the score of provider $p$ is normalized by the highest score
-among the four compared plans. The normalized benchmarks are then averaged
-within each workload category to obtain
-$B_{p,R}$, $B_{p,C}$, and $B_{p,A}$.
-Overall benchmark quality is the equal-weight mean of the three workload scores.
+\[
+C_p=\frac{Q_p}{T_p}\le\frac{Q_p}{O_p}\equiv C_p^{\mathrm{out}}.
+\]
 
-\vspace{0.4em}
+The notebook therefore reports $C_p^{\mathrm{out}}$ only as an output-capacity
+upper bound. ChatGPT Plus, Claude Pro, and SuperGrok use the Real API Pricing
+monthly estimates of 159M, 3.97B, and 509M tokens, respectively. Google AI Pro
+uses a low-confidence 2.22B-token monthly estimate derived from two public
+usage reports. Artificial Analysis reports 27k, 118k, 71k, and 36k output
+tokens per task for the four selected models.
 
-The notebook produces the following actual computational outputs:
-Overall scores of 95.55 for ChatGPT Plus, 95.06 for Claude Pro,
-72.48 for Google AI Pro, and 75.28 for SuperGrok.
-It also reports the corresponding Reasoning, Coding, and Agentic scores,
-price-adjusted benchmark value, and one-at-a-time sensitivity results.
+The resulting output-capacity upper bounds are 5,888.89, 33,644.07, 31,267.61,
+and 14,138.89. Multiplying by Overall quality gives
+$\mathrm{SUU}^{\mathrm{out}}$ proxies of 5,841.79, 22,216.46, 23,729.62, and
+11,147.41. The corresponding upper-bound SUU-per-dollar proxies are 292.09,
+1,110.82, 1,187.07, and 371.58. A $\pm20\%$ quota sensitivity check produces
+the same proportional change in these capacity-based quantities.
 
-\vspace{0.4em}
-
-The sensitivity analysis perturbs each raw benchmark input by
-$\pm10\%$ and $\pm20\%$ and recomputes the resulting workload and Overall
-scores to identify which benchmark assumptions most affect the comparison.
-
-\vspace{0.4em}
-
-These results represent the benchmark-quality component of SUU.
-Final subscription-level SUU,
-$\mathrm{SUU}_{p,j}=C_{p,j}B_{p,j}$,
-remains pending because provider-specific usage capacities $C_{p,j}$ have not
-yet been empirically measured.
+These values are not observed monthly task counts. The notebook intentionally
+does not infer total tokens per task from an unrelated token-mix assumption;
+therefore the full workload-specific $C_{p,j}$ remains future measurement.
 
 
 \subsection{Current interactive artifact}
@@ -963,9 +934,10 @@ constraints.
 
 Stage 3 presents the four-view SUU interface:
 Overall, Reasoning, Coding, and Agentic.
-In the current prototype, benchmark-normalized quality scores are used to
-demonstrate the interface; final SUU and SUU-per-dollar values will be
-introduced after provider-specific usage capacities are measured.
+In the current prototype, benchmark-normalized quality scores demonstrate the
+four-view interface. The Colab additionally reports plan-level output-capacity
+and SUU upper-bound proxies; these are not presented as final workload-specific
+SUUs because total task consumption remains unobserved.
 
 \vspace{0.4em}
 
@@ -987,14 +959,13 @@ through my own course work and independent reasoning.
 
 \vspace{0.5em}
 
-On September 13, 2026,
-I used ChatGPT (GPT-5.6 Sol) to refine wording and structure,
-organize pricing-plan information I had collected,
-and prepare clearer descriptions for non-expert users. I used Claude Opus 5 to help generate the initial visual design for the teaser
-figure illustrating the SUU framework. I reviewed and revised the resulting
-layout and content to ensure that it accurately reflected the research design
-and the relationships among provider inputs, workload-specific SUUs, and the
-behavioral experiment. Furthermore, I used ChatGPT (GPT-5.6 Sol) to formalize the SUU equations and construct a Colab implementation.
+On September 13 and September 19, 2026,
+I used ChatGPT (GPT-5.6 Sol) to refine wording and structure, check the SUU
+algebra, organize pricing-plan and benchmark information, and revise the Colab
+implementation. I used Claude Opus 5 to help generate the initial visual design
+for the teaser figure illustrating the SUU framework. I reviewed and revised
+all generated material, reran the notebook, and checked the reported outputs
+against the stated formulas and source data.
 
 \vspace{0.5em}
 
@@ -1071,8 +1042,8 @@ actually used rather than summarized only by one aggregate number.
 This led me to revise the framework to report separate Reasoning, Coding,
 and Agentic views, while retaining their equal-weight average as an Overall
 view for users who want a compact comparison. I then formalized the
-workload-specific framework and added one-at-a-time sensitivity analysis
-to examine how measurement assumptions affect the resulting comparison.
+workload-specific framework and added an explicit upper-bound capacity proxy
+with quota sensitivity analysis to expose measurement uncertainty.
 
 
 % ============================================================
@@ -1205,28 +1176,147 @@ public procurement.
 The PS1 Hugging Face artifact instead focuses directly on the required
 SDG 4 educational contribution.
 
-
 % ============================================================
 % APPENDIX D
 % ============================================================
 
+\clearpage
+\onecolumn
+
 \section{Review response and revision record}
 
-\textbf{Version 1 status.}
+\textbf{Version 2 development.}
 
-The first reviewable proposal is submitted on September 13, 2026.
-Peer reviews,
-the author response,
-reviewer follow-up,
-and version 2 changes are pending.
+The version 2 revision incorporates feedback from
+Prof. Luyao Zhang and peer reviewers Yiqiao Liu and Feiyu Li.
+The revisions do not simply add commentary to the earlier proposal;
+they modify the economic validation, computational definition of usage
+capacity, behavioral experiment, and intellectual framing of the project.
 
+\vspace{0.5em}
+
+\renewcommand{\arraystretch}{1.18}
+
+\begin{longtable}{
+@{}
+p{0.16\textwidth}
+p{0.37\textwidth}
+p{0.41\textwidth}
+@{}
+}
+
+\caption{Feedback received and corresponding revisions.}
+\label{tab:review-revisions}
+\\
+
+\toprule
+\textbf{Source}
+&
+\textbf{Feedback}
+&
+\textbf{Revision made}
+\\
+\midrule
+\endfirsthead
+
+\toprule
+\textbf{Source}
+&
+\textbf{Feedback}
+&
+\textbf{Revision made}
+\\
+\midrule
+\endhead
+
+\bottomrule
+\endfoot
+
+Prof. Zhang,
+Week 1
+&
+The earlier media project suggested a broader interest in how shared signals
+coordinate decisions under uncertainty. The distinction between signals of
+lasting preference and temporary imitation could give the project a clearer
+intellectual identity.
+&
+I made this shared-signals question explicit as the continuing intellectual
+thread of the proposal. The project now describes the transition from audience
+success as a signal of demand to standardized AI-service information as a signal
+used in consumer choice.
+\\
+
+\addlinespace
+
+Prof. Zhang,
+Week 2
+&
+A common AI-service measure should preserve economically important differences
+across tasks, quality, and error costs rather than create false comparability.
+A useful next test is to compare two services on two tasks while varying the
+cost of errors.
+&
+I added an economic validation design comparing two AI services across two
+workloads and varying error sensitivity. The validation examines whether the
+service preferred under task-specific value remains preferred under the common
+measure and uses disagreement as evidence that Overall SUU may conceal
+important heterogeneity.
+\\
+
+\addlinespace
+
+Yiqiao Liu
+&
+The proposal needs an empirical definition of the missing capacity term
+$C_{p,j}$ and a defensible explanation of what constitutes a fair standardized
+reference task across heterogeneous providers.
+&
+I replaced the previously unspecified capacity term with a reproducible
+empirical upper-bound calculation. The revision combines estimated monthly
+usable-token allowances $Q_p$ with Artificial Analysis output tokens per task
+$O_p$ and uses $C_p\le Q_p/O_p$. Because total tokens per task are unavailable,
+the result is explicitly reported as an upper bound rather than an imputed
+monthly task count; workload-specific $C_{p,j}$ remains future measurement.
+\\
+
+\addlinespace
+
+Feiyu Li
+&
+The current computation establishes benchmark-normalized quality but not yet
+subscription-level SUU. In addition, the Overall SUU may itself become the
+numeric anchor that the behavioral design warns against.
+&
+I connected the new capacity upper bound to a quality-adjusted
+$\mathrm{SUU}^{\mathrm{out}}$ proxy while keeping it distinct from the final
+workload-specific SUU. I also redesigned the behavioral validation as a
+randomized comparison between an Overall-only interface and a four-view
+interface, with workload-choice consistency as the primary outcome.
+\\
+
+\end{longtable}
+
+\vspace{0.5em}
+
+\textbf{Resulting Version 2 structure.}
+
+The revised proposal now follows three linked validation stages.
+First, the computational framework combines workload-specific quality with an
+observable output-token capacity upper bound and makes the remaining measurement
+gap explicit. Second, the economic validation asks whether a common measure
+preserves task-sensitive differences in quality and error costs. Third, the
+behavioral validation asks whether standardization improves workload-appropriate
+choices or instead creates numeric anchoring. Together, these revisions change SUU from primarily a normalization formula into
+a measurement-and-validation framework. A successful final SUU must use a
+capacity term that is operationally comparable across providers, preserve
+economically relevant heterogeneity, and improve rather than distort user
+decisions.
 
 % ============================================================
 % APPENDIX E
 % ============================================================
 
 \clearpage
-\onecolumn
 
 \section{Structured abstract and cumulative proposal map}
 \label{app:abstract}
@@ -1296,26 +1386,25 @@ Method and model assumptions
 &
 The full framework defines
 $\mathrm{SUU}_{p,j}=C_{p,j}B_{p,j}$.
-The current PS1 computation implements the benchmark-quality component
-$B_{p,j}$ using Artificial Analysis v4.3.
-A normalized composite benchmark score serves as the baseline,
-while the proposed modification reports separate Reasoning,
-Coding, and Agentic benchmark components and their equal-weight Overall score.
-The Colab performs one-at-a-time
-$\pm10\%/\pm20\%$
-sensitivity analysis on the raw benchmark inputs.
-Provider-specific usage capacity $C_{p,j}$ remains planned future measurement.
+The current computation implements $B_{p,j}$ from Artificial Analysis v4.3 and
+uses estimated monthly usable tokens $Q_p$ with reported output tokens per task
+$O_p$ to compute the observable upper bound
+$C_p^{\mathrm{out}}=Q_p/O_p$. Because total task tokens are not public,
+$C_p^{\mathrm{out}}$ and the resulting $\mathrm{SUU}_p^{\mathrm{out}}$
+are labeled upper-bound proxies rather than final task capacity. The Colab also
+runs a $\pm20\%$ sensitivity check on the quota estimates.
 \\
 
 Results or expected results
 &
-The benchmark-normalization notebook produced Overall scores of 95.55 for
-ChatGPT Plus, 95.06 for Claude Pro, 72.48 for Google AI Pro, and 75.28 for
-SuperGrok. Workload-level results differed substantially; for example,
-SuperGrok scored 94.66 on Agentic but 68.95 on Reasoning and 62.24 on Coding.
-These are actual computational outputs from the frozen benchmark snapshot.
-Final subscription-level SUU remains planned because provider-specific usage
-capacity has not yet been measured.
+The final notebook produced Overall quality scores of 99.20 for ChatGPT Plus,
+66.03 for Claude Pro, 75.89 for Google AI Pro, and 78.84 for SuperGrok.
+SuperGrok, for example, scored 98.91 on Agentic but 70.69 on Reasoning and
+66.92 on Coding. The output-capacity upper bounds were 5,888.89, 33,644.07,
+31,267.61, and 14,138.89, with quality-adjusted
+$\mathrm{SUU}^{\mathrm{out}}$ proxies of 5,841.79, 22,216.46, 23,729.62,
+and 11,147.41. These are actual notebook outputs but remain upper-bound proxies,
+not observed subscription task counts.
 \\
 
 Intellectual merits
@@ -1340,11 +1429,17 @@ Learning effects remain to be tested.
 
 Feedback received and revision made
 &
-The project changed from an earlier film-industry trend question after the September 4 Tencent observation highlighted a gap between standardized AI
-benchmarks and fragmented usage measures.
-SUU was later revised from one scalar output to
-Overall, Reasoning, Coding, and Agentic views to reduce false comparability.
-
+The project changed from an earlier media-imitation question to AI-service
+comparability after the September 4 Tencent observation, while retaining the
+broader question of how shared signals guide decisions under uncertainty.
+Week 2 feedback motivated an explicit test of whether a common unit preserves
+task- and error-sensitive economic choices.
+Peer feedback then led me to operationalize the missing capacity evidence with
+an output-token upper bound, explicitly separate that proxy from final
+workload-specific $C_{p,j}$, and redesign the behavioral validation as an
+Overall-only versus four-view comparison.
+Together, these revisions address false comparability at the measurement,
+economic, and behavioral levels.
 \\
 
 \bottomrule
